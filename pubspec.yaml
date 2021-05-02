@@ -1,6 +1,6 @@
 name: contentful_sdk
 description: Contentful SDK designed to provide support for Contentful Delivery, Preview & Management APIs.
-version: 0.0.2
+version: 0.1.0
 homepage:
 
 environment:
@@ -9,6 +9,7 @@ environment:
 dependencies:
   http: ^0.13.2
   json_annotation: ^4.0.1
+  equatable: ^2.0.0
 
 dev_dependencies:
   build_runner: ^2.0.1
