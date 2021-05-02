@@ -1,7 +1,4 @@
-library contentful_flutter;
+library contentful_sdk;
 
-/// A Calculator.
-class Calculator {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
-}
+export 'core/client_contentful.dart';
+export 'core/client_management.dart';
