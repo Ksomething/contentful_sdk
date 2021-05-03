@@ -1,9 +1,9 @@
-import 'package:contentful_sdk/clients/client_core.dart';
+import 'package:contentful_sdk/clients/core.dart';
 import 'package:contentful_sdk/clients/constants.dart';
 import 'package:http/http.dart';
 
-class ContentfulClient extends CoreClient {
-  ContentfulClient({
+class ContentfulDeliveryClient extends CoreClient {
+  ContentfulDeliveryClient({
     required accessToken,
     required String spaceId,
     String? host,

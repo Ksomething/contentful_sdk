@@ -32,8 +32,8 @@ class CoreClient extends BaseClient {
         scheme: 'https',
         host: _host,
         path: (includeEnvironment)
-            ? '/space/$_spaceId/environments/$_environment$path'
-            : '/space/$_spaceId$path',
+            ? '/spaces/$_spaceId/environments/$_environment$path'
+            : '/spaces/$_spaceId$path',
         queryParameters: queryParameters,
       );
 
@@ -50,7 +50,10 @@ class CoreClient extends BaseClient {
   }) async {
 
     final api = getPath(path, includeEnvironment: includeEnvironment);
-    late final response;
+    late final Response response;
+
+    if (headers == null) headers = <String, String>{};
+    headers['Authorization'] = 'Bearer $_accessToken';
 
     switch (methodType) {
       case HttpMethod.POST:
@@ -74,8 +77,9 @@ class CoreClient extends BaseClient {
       throw ContentfulRequestFailedException(
         statusCode: response.statusCode,
         url: api.toString(),
-        methodType: '$methodType',
+        methodType: '${methodType.value}',
         body: jsonDecode(response.body),
+        requestHeaders: response.request?.headers,
       );
     } else {
       return jsonDecode(response.body);
@@ -95,4 +99,8 @@ enum HttpMethod {
   PATCH,
   PUT,
   DELETE,
+}
+
+extension StringValue on HttpMethod {
+  String get value => this.toString().split('.').last;
 }

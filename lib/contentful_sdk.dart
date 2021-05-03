@@ -1,4 +1,5 @@
 library contentful_sdk;
 
-export 'core/client_contentful.dart';
-export 'core/client_management.dart';
+export 'clients/delivery.dart';
+export 'clients/management.dart';
+export 'clients/preview.dart';
