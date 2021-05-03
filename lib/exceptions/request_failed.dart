@@ -3,17 +3,20 @@ class ContentfulRequestFailedException implements Exception {
   int _statusCode;
   String _url;
   String _methodType;
-  dynamic? _body;
+  Map<String, dynamic>? _body;
+  Map<String, String>? _requestHeaders;
 
   ContentfulRequestFailedException(
       {required int statusCode,
       required String url,
       required String methodType,
-      dynamic? body})
+      Map<String, dynamic>? body,
+      Map<String, String>? requestHeaders})
       : _statusCode = statusCode,
         _url = url,
         _methodType = methodType,
-        _body = body;
+        _body = body,
+        _requestHeaders = requestHeaders;
 
   /// The status code thrown by the API
   int get statusCode => _statusCode;
@@ -25,5 +28,8 @@ class ContentfulRequestFailedException implements Exception {
   String get methodType => _methodType;
 
   /// The body of the response from the request
-  dynamic get body => _body;
+  Map<String, dynamic>? get body => _body;
+
+  /// The headers that were sent to the API service.
+  Map<String, String>? get requestHeaders => _requestHeaders;
 }
