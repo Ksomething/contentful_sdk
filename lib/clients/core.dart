@@ -1,6 +1,6 @@
 import 'package:contentful_sdk/exceptions/request_failed.dart';
 import 'package:http/http.dart';
-import 'package:contentful_sdk/core/constants.dart';
+import 'package:contentful_sdk/clients/constants.dart';
 import 'dart:convert';
 
 /// Singleton instance of a HTTP Client fitted for Contentful requests
