@@ -1,5 +1,5 @@
-import 'package:contentful_sdk/core/client_core.dart';
-import 'package:contentful_sdk/core/constants.dart';
+import 'package:contentful_sdk/clients/client_core.dart';
+import 'package:contentful_sdk/clients/constants.dart';
 import 'package:http/http.dart';
 
 class ContentfulClient extends CoreClient {
