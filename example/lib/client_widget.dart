@@ -1,4 +1,8 @@
-import 'package:contentful_sdk/exceptions/request_failed.dart';
+import 'package:contentful_sdk/clients/core.dart';
+import 'package:contentful_sdk/exceptions/contentful_processing_failed.dart';
+import 'package:contentful_sdk/exceptions/contentful_request_failed.dart';
+import 'package:contentful_sdk/models/contentful_response.dart';
+import 'package:contentful_sdk_example/expandable_card.dart';
 import 'package:contentful_sdk_example/support.dart';
 import 'package:contentful_sdk/contentful_sdk.dart';
 import 'package:flutter/material.dart';
@@ -25,11 +29,12 @@ class ContentfulWidget extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() => _ContentfulWidgetState(
-      accessToken: _accessToken,
-      spaceId: _spaceId,
-      environment: _environment,
-  host: _host,
-  serviceType: _serviceType,);
+        accessToken: _accessToken,
+        spaceId: _spaceId,
+        environment: _environment,
+        host: _host,
+        serviceType: _serviceType,
+      );
 }
 
 class _ContentfulWidgetState extends State<ContentfulWidget> {
@@ -74,9 +79,43 @@ class _ContentfulWidgetState extends State<ContentfulWidget> {
     }
   }
 
-  Future<void> _updateContentTypes() async {
+  Future<void> _safelyHandleAsyncFunction(Future<void> Function() action) async {
     try {
-      late final Map<String, dynamic> results;
+      await action();
+    }on ContentfulRequestFailedException catch (error) {
+      final message = (error.body != null)
+          ? error.body!['message'] as String
+          : 'Request Failed';
+      final errorMsg = '$message. (Error Code: ${error.statusCode})';
+      print('[${error.methodType}] ${error.url}');
+      print('Status Code: ${error.statusCode}');
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(errorMsg)));
+    } on ContentfulProcessingFailedException catch (error) {
+      print('Plugin failed to parse response');
+      print('${error.cause}\n${error.stacktrace}');
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(error.message),
+        backgroundColor: Colors.deepOrange,
+      ));
+    } catch (error, stacktrace) {
+      final errorMsg =
+          'Something went wrong while trying to send your request.';
+
+      print('An unexpected error.');
+      print('$error\n$stacktrace');
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(errorMsg),
+        backgroundColor: Colors.deepOrange,
+      ));
+    }
+  }
+
+  Future<void> _updateContentTypes() async {
+      late final ContentfulResponse results;
 
       switch (widget._serviceType) {
         case ContentfulServiceType.Delivery:
@@ -93,22 +132,10 @@ class _ContentfulWidgetState extends State<ContentfulWidget> {
           break;
       }
       setState(() => _resultContentTypes = results.toString());
-    } catch(error, stacktrace) {
-      late final errorMsg;
-      if (error is ContentfulRequestFailedException) {
-        final message = (error.body != null) ? error.body!['message'] as String: 'Request Failed';
-        errorMsg = '$message. (Error Code: ${error.statusCode})';
-        print('[${error.methodType}] ${error.url}');
-        print('Status Code: ${error.statusCode}');
-      } else {
-        errorMsg = 'Something went wrong while trying to send your request.';
-      }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
-    }
   }
 
   Future<void> _updateEntries() async {
-    late final Map<String, dynamic> results;
+    late final ContentfulResponse results;
 
     switch (widget._serviceType) {
       case ContentfulServiceType.Delivery:
@@ -130,70 +157,31 @@ class _ContentfulWidgetState extends State<ContentfulWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(),
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                ElevatedButton(
-                    onPressed: () async => await _updateContentTypes(),
-                    child: Text('Get Content Type'),
-                  ),
-                SizedBox(width: 20.0),
-                Expanded(
-                  child: Card(
-                    shape: RoundedRectangleBorder(),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(_resultContentTypes),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                ElevatedButton(
-                    onPressed: () async => await _updateEntries(),
-                    child: Text('Get Entries'),
-                  ),
-                SizedBox(width: 20.0),
-                Expanded(
-                  child: Card(
-                    shape: RoundedRectangleBorder(),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(_resultEntries),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            if (widget._serviceType == ContentfulServiceType.Management)
-              Row(
-                children: [
-                  ElevatedButton(
-                    onPressed: () {},
-                    child: Text('Create Content Type'),
-                  ),
-                ],
-              ),
-            if (widget._serviceType == ContentfulServiceType.Management)
-              Row(
-                children: [
-                  ElevatedButton(
-                    onPressed: () {},
-                    child: Text('Create Entry'),
-                  ),
-                ],
-              ),
-          ],
+    return Column(
+      children: [
+        ExpandableCard(
+          title: 'Content Type',
+          httpMethod: HttpMethod.GET,
+          onSend: () async => await _safelyHandleAsyncFunction(_updateContentTypes),
+          response: _resultContentTypes,
         ),
-      ),
+        ExpandableCard(
+          title: 'Entries',
+          httpMethod: HttpMethod.GET,
+          onSend: () async => await _safelyHandleAsyncFunction(_updateEntries) ,
+          response: _resultEntries,
+        ),
+        if (widget._serviceType == ContentfulServiceType.Management)
+          Column(
+            children: [
+              ExpandableCard(
+                title: 'Content Type',
+                httpMethod: HttpMethod.POST,
+                onSend: () {},
+              ),
+            ],
+          ),
+      ],
     );
   }
 }

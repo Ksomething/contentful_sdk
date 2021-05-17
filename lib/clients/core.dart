@@ -1,4 +1,4 @@
-import 'package:contentful_sdk/exceptions/request_failed.dart';
+import 'package:contentful_sdk/exceptions/contentful_request_failed.dart';
 import 'package:http/http.dart';
 import 'package:contentful_sdk/clients/constants.dart';
 import 'dart:convert';
