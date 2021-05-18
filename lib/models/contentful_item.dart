@@ -50,7 +50,7 @@ class ContentfulItem {
       this.fields);
 
   factory ContentfulItem.fromJson(Map<String, dynamic> json,
-      {Function<T>(T)? mapFromJson}) {
+      {Function? mapFromJson}) {
     final Map<String, dynamic> _content = json['sys'];
     final _space = ContentfulProperty.fromJson(_content['space']);
     final _metadata = json.containsKey('metadata')
@@ -87,8 +87,9 @@ class ContentfulItem {
     final String? _name = json['name'];
     final String? _description = json['description'];
     final String? _locale = _content['locale'];
-    final _fields =
-        (mapFromJson == null) ? json['fields'] : mapFromJson(json['fields']);
+    final _fields = (mapFromJson == null)
+        ? json['fields']
+        : mapFromJson(List<Map<String, dynamic>>.from(json['fields']));
 
     return ContentfulItem(
         _space,

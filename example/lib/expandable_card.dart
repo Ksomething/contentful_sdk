@@ -150,7 +150,7 @@ class _ExpandableCardState extends State<ExpandableCard> {
                         padding: EdgeInsets.symmetric(vertical: 16.0),
                         child: Text(widget._response),
                       )
-                    : Container(child: SizedBox()),
+                    : Container(child: widget._response),
           ],
         ),
       ),

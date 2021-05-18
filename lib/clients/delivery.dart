@@ -2,6 +2,7 @@ import 'package:contentful_sdk/clients/core.dart';
 import 'package:contentful_sdk/clients/constants.dart';
 import 'package:contentful_sdk/exceptions/contentful_processing_failed.dart';
 import 'package:contentful_sdk/exceptions/contentful_request_failed.dart';
+import 'package:contentful_sdk/models/contentful_content_type_field.dart';
 import 'package:contentful_sdk/models/contentful_response.dart';
 import 'package:http/http.dart';
 
@@ -19,7 +20,8 @@ class ContentfulDeliveryClient extends CoreClient {
             environment: environment,
             httpClient: httpClient);
 
-  Future<ContentfulResponse> getEntries({Function<T>(T)? mapFromJson}) async {
+  Future<ContentfulResponse> getEntries(
+      {T Function<T>(Map<String, dynamic>)? mapFromJson}) async {
     try {
       final json = await handleRequest(path: '/entries');
       return ContentfulResponse.fromJson(json, mapFromJson: mapFromJson);
@@ -32,7 +34,8 @@ class ContentfulDeliveryClient extends CoreClient {
     }
   }
 
-  Future<ContentfulResponse> getSpace({Function<T>(T)? mapFromJson}) async {
+  Future<ContentfulResponse> getSpace(
+      {T Function<T>(Map<String, dynamic>)? mapFromJson}) async {
     try {
       final json = await handleRequest(path: '', includeEnvironment: false);
       return ContentfulResponse.fromJson(json, mapFromJson: mapFromJson);
@@ -45,7 +48,8 @@ class ContentfulDeliveryClient extends CoreClient {
     }
   }
 
-  Future<ContentfulResponse> getAssets({Function<T>(T)? mapFromJson}) async {
+  Future<ContentfulResponse> getAssets(
+      {T Function<T>(Map<String, dynamic>)? mapFromJson}) async {
     try {
       final json = await handleRequest(path: '/assets');
       return ContentfulResponse.fromJson(json, mapFromJson: mapFromJson);
@@ -58,7 +62,8 @@ class ContentfulDeliveryClient extends CoreClient {
     }
   }
 
-  Future<ContentfulResponse> getAsset(String assetId, {Function<T>(T)? mapFromJson}) async {
+  Future<ContentfulResponse> getAsset(String assetId,
+      {T Function<T>(Map<String, dynamic>)? mapFromJson}) async {
     try {
       final json = await handleRequest(path: '/assets/$assetId');
       return ContentfulResponse.fromJson(json, mapFromJson: mapFromJson);
@@ -71,10 +76,16 @@ class ContentfulDeliveryClient extends CoreClient {
     }
   }
 
-  Future<ContentfulResponse> getContentTypes({Function<T>(T)? mapFromJson}) async {
+  Future<ContentfulResponse> getContentTypes() async {
+    List<ContentfulContentTypeField> mapResponse(
+            List<Map<String, dynamic>> json) =>
+        json.map<ContentfulContentTypeField>(
+              (field) => ContentfulContentTypeField.fromJson(field),
+        ).toList();
+
     try {
       final json = await handleRequest(path: '/content_types');
-      return ContentfulResponse.fromJson(json, mapFromJson: mapFromJson);
+      return ContentfulResponse.fromJson(json, mapFromJson: mapResponse);
     } catch (error, stacktrace) {
       if (error is ContentfulRequestFailedException) rethrow;
       throw ContentfulProcessingFailedException(

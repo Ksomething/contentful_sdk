@@ -13,7 +13,7 @@ class ContentfulResponse {
       this.type, this.total, this.skip, this.limit, this.items, this.assets);
 
   factory ContentfulResponse.fromJson(Map<String, dynamic> json,
-      {Function<T>(T)? mapFromJson}) {
+      {Function? mapFromJson}) {
     final String _type = (json['sys'] as Map<String, dynamic>)['type'];
     final int _total = json['total'];
     final int _skip = json['skip'];
