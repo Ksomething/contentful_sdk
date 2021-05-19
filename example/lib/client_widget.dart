@@ -40,7 +40,7 @@ class ContentfulWidget extends StatefulWidget {
 
 class _ContentfulWidgetState extends State<ContentfulWidget> {
   late final contentfulClient;
-  String _resultEntries = '';
+  dynamic _resultEntries = '';
   dynamic _resultContentTypes = '';
   String _resultCreateContentType = '';
   String _resultCreateEntry = '';
@@ -233,6 +233,50 @@ class _ContentfulWidgetState extends State<ContentfulWidget> {
     );
   }
 
+  Widget _buildEntryResults(List<ContentfulItem> items) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: items
+          .map<Widget>((item) => ExpansionTile(
+                leading: Container(
+                  width: 70.0,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12.0),
+                    color: Colors.blueGrey,
+                  ),
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        item.contentType?.id ?? 'N/A',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                title: Text(item.id),
+                children: [
+                  DataTable(
+                      columns: [
+                        DataColumn(label: Text('Field')),
+                        DataColumn(label: Text('Value')),
+                      ],
+                      rows: (item.fields as Map<String, dynamic>)
+                          .entries
+                          .map<DataRow>((field) => DataRow(cells: [
+                                DataCell(Text(field.key)),
+                                DataCell(Text(field.value.toString()))
+                              ]))
+                          .toList())
+                ],
+              ))
+          .toList(),
+    );
+  }
+
   Future<void> _updateEntries() async {
     late final ContentfulResponse results;
 
@@ -256,7 +300,7 @@ class _ContentfulWidgetState extends State<ContentfulWidget> {
       items += '${item.fields.toString()}';
     });
 
-    setState(() => _resultEntries = items);
+    setState(() => _resultEntries = _buildEntryResults(results.items));
   }
 
   @override

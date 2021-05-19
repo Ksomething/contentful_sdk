@@ -25,3 +25,4 @@
 
 * Created models that more easily map to responses from `Contentful` services.
 * Updated example to handle changes to package.
+* Updated how responses are shown in the example project.
