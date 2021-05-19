@@ -1,4 +1,9 @@
-import 'package:contentful_sdk/exceptions/request_failed.dart';
+import 'package:contentful_sdk/clients/core.dart';
+import 'package:contentful_sdk/exceptions/contentful_processing_failed.dart';
+import 'package:contentful_sdk/exceptions/contentful_request_failed.dart';
+import 'package:contentful_sdk/models/contentful_content_type_field.dart';
+import 'package:contentful_sdk/models/contentful_response.dart';
+import 'package:contentful_sdk_example/expandable_card.dart';
 import 'package:contentful_sdk_example/support.dart';
 import 'package:contentful_sdk/contentful_sdk.dart';
 import 'package:flutter/material.dart';
@@ -25,17 +30,18 @@ class ContentfulWidget extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() => _ContentfulWidgetState(
-      accessToken: _accessToken,
-      spaceId: _spaceId,
-      environment: _environment,
-  host: _host,
-  serviceType: _serviceType,);
+        accessToken: _accessToken,
+        spaceId: _spaceId,
+        environment: _environment,
+        host: _host,
+        serviceType: _serviceType,
+      );
 }
 
 class _ContentfulWidgetState extends State<ContentfulWidget> {
   late final contentfulClient;
-  String _resultEntries = '';
-  String _resultContentTypes = '';
+  dynamic _resultEntries = '';
+  dynamic _resultContentTypes = '';
   String _resultCreateContentType = '';
   String _resultCreateEntry = '';
 
@@ -74,41 +80,205 @@ class _ContentfulWidgetState extends State<ContentfulWidget> {
     }
   }
 
-  Future<void> _updateContentTypes() async {
+  /// Wraps the async [Function] in a way to prevent app from breaking.
+  Future<void> _safelyHandleAsyncFunction(
+      Future<void> Function() action) async {
     try {
-      late final Map<String, dynamic> results;
+      await action();
+    } on ContentfulRequestFailedException catch (error) {
+      final message = (error.body != null)
+          ? error.body!['message'] as String
+          : 'Request Failed';
+      final errorMsg = '$message. (Error Code: ${error.statusCode})';
+      print('[${error.methodType}] ${error.url}');
+      print('Status Code: ${error.statusCode}');
 
-      switch (widget._serviceType) {
-        case ContentfulServiceType.Delivery:
-          final client = contentfulClient as ContentfulDeliveryClient;
-          results = await client.getContentTypes();
-          break;
-        case ContentfulServiceType.Preview:
-          final client = contentfulClient as ContentfulPreviewClient;
-          results = await client.getContentTypes();
-          break;
-        case ContentfulServiceType.Management:
-          final client = contentfulClient as ContentfulManagementClient;
-          results = await client.getContentTypes();
-          break;
-      }
-      setState(() => _resultContentTypes = results.toString());
-    } catch(error, stacktrace) {
-      late final errorMsg;
-      if (error is ContentfulRequestFailedException) {
-        final message = (error.body != null) ? error.body!['message'] as String: 'Request Failed';
-        errorMsg = '$message. (Error Code: ${error.statusCode})';
-        print('[${error.methodType}] ${error.url}');
-        print('Status Code: ${error.statusCode}');
-      } else {
-        errorMsg = 'Something went wrong while trying to send your request.';
-      }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(errorMsg)));
+    } on ContentfulProcessingFailedException catch (error) {
+      print('Plugin failed to parse response');
+      print('${error.cause}\n${error.stacktrace}');
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(error.message),
+        backgroundColor: Colors.deepOrange,
+      ));
+    } catch (error, stacktrace) {
+      final errorMsg =
+          'Something went wrong while trying to send your request.';
+
+      print('An unexpected error.');
+      print('$error\n$stacktrace');
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(errorMsg),
+        backgroundColor: Colors.deepOrange,
+      ));
     }
   }
 
+  Future<void> _updateContentTypes() async {
+    late final ContentfulResponse results;
+
+    switch (widget._serviceType) {
+      case ContentfulServiceType.Delivery:
+        final client = contentfulClient as ContentfulDeliveryClient;
+        results = await client.getContentTypes();
+        break;
+      case ContentfulServiceType.Preview:
+        final client = contentfulClient as ContentfulPreviewClient;
+        results = await client.getContentTypes();
+        break;
+      case ContentfulServiceType.Management:
+        final client = contentfulClient as ContentfulManagementClient;
+        results = await client.getContentTypes();
+        break;
+    }
+
+    String items = '';
+    results.items.forEach((item) {
+      items += '${item.fields.toString()}';
+    });
+    setState(
+        () => _resultContentTypes = _buildContentTypeResults(results.items));
+  }
+
+  Widget _buildContentTypeResults(List<ContentfulItem> items) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: items
+          .map<Widget>(
+            (item) => ExpansionTile(
+              title: Text(item.name ?? 'n/a'),
+              leading: Icon(Icons.info),
+              children: [
+                Container(
+                  height: 300,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      DataTable(
+                        columns: [
+                          DataColumn(
+                            label: Text(
+                              'ID',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Name',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Type',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Required',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Disabled',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Omitted',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Localized',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                        rows: List<ContentfulContentTypeField>.from(item.fields)
+                            .map<DataRow>((field) => DataRow(
+                                  cells: [
+                                    DataCell(Text(field.id)),
+                                    DataCell(Text(field.name)),
+                                    DataCell(Text(field.type)),
+                                    DataCell(Text('${field.required}')),
+                                    DataCell(Text('${field.disabled}')),
+                                    DataCell(Text('${field.omitted}')),
+                                    DataCell(Text('${field.localized}')),
+                                  ],
+                                ))
+                            .toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Widget _buildEntryResults(List<ContentfulItem> items) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: items
+          .map<Widget>((item) => ExpansionTile(
+                leading: Container(
+                  width: 70.0,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12.0),
+                    color: Colors.blueGrey,
+                  ),
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        item.contentType?.id ?? 'N/A',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                title: Text(item.id),
+                children: [
+                  DataTable(
+                      columns: [
+                        DataColumn(label: Text('Field')),
+                        DataColumn(label: Text('Value')),
+                      ],
+                      rows: (item.fields as Map<String, dynamic>)
+                          .entries
+                          .map<DataRow>((field) => DataRow(cells: [
+                                DataCell(Text(field.key)),
+                                DataCell(Text(field.value.toString()))
+                              ]))
+                          .toList())
+                ],
+              ))
+          .toList(),
+    );
+  }
+
   Future<void> _updateEntries() async {
-    late final Map<String, dynamic> results;
+    late final ContentfulResponse results;
 
     switch (widget._serviceType) {
       case ContentfulServiceType.Delivery:
@@ -125,75 +295,42 @@ class _ContentfulWidgetState extends State<ContentfulWidget> {
         break;
     }
 
-    setState(() => _resultEntries = results.toString());
+    String items = '';
+    results.items.forEach((item) {
+      items += '${item.fields.toString()}';
+    });
+
+    setState(() => _resultEntries = _buildEntryResults(results.items));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(),
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                ElevatedButton(
-                    onPressed: () async => await _updateContentTypes(),
-                    child: Text('Get Content Type'),
-                  ),
-                SizedBox(width: 20.0),
-                Expanded(
-                  child: Card(
-                    shape: RoundedRectangleBorder(),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(_resultContentTypes),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                ElevatedButton(
-                    onPressed: () async => await _updateEntries(),
-                    child: Text('Get Entries'),
-                  ),
-                SizedBox(width: 20.0),
-                Expanded(
-                  child: Card(
-                    shape: RoundedRectangleBorder(),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(_resultEntries),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            if (widget._serviceType == ContentfulServiceType.Management)
-              Row(
-                children: [
-                  ElevatedButton(
-                    onPressed: () {},
-                    child: Text('Create Content Type'),
-                  ),
-                ],
-              ),
-            if (widget._serviceType == ContentfulServiceType.Management)
-              Row(
-                children: [
-                  ElevatedButton(
-                    onPressed: () {},
-                    child: Text('Create Entry'),
-                  ),
-                ],
-              ),
-          ],
+    return Column(
+      children: [
+        ExpandableCard(
+          title: 'Content Type',
+          httpMethod: HttpMethod.GET,
+          onSend: () async =>
+              await _safelyHandleAsyncFunction(_updateContentTypes),
+          response: _resultContentTypes,
         ),
-      ),
+        ExpandableCard(
+          title: 'Entries',
+          httpMethod: HttpMethod.GET,
+          onSend: () async => await _safelyHandleAsyncFunction(_updateEntries),
+          response: _resultEntries,
+        ),
+        if (widget._serviceType == ContentfulServiceType.Management)
+          Column(
+            children: [
+              ExpandableCard(
+                title: 'Content Type',
+                httpMethod: HttpMethod.POST,
+                onSend: () {},
+              ),
+            ],
+          ),
+      ],
     );
   }
 }

@@ -60,12 +60,14 @@ class _MyHomePageState extends State<MyHomePage> {
         '(Environment: ${_controllerEnvironment.text})');
 
     if (_formKey.currentState!.validate()) {
+      setState(() => _contentfulWidget = null);
       setState(() {
         _contentfulWidget = ContentfulWidget(
           accessToken: _controllerAccessToken.text,
           spaceId: _controllerSpaceId.text,
           environment: _controllerEnvironment.text,
           host: (_controllerHost.text.length > 0) ? _controllerHost.text : null,
+          serviceType: _selectedServiceType ?? ContentfulServiceType.Delivery,
         );
       });
     }

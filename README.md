@@ -1,14 +1,17 @@
-# contentful_sdk
+# Contentful SDK
+> Dart package that enables the use of Contentful in projects.
 
-A new Flutter package project.
+## Install
 
-## Getting Started
+Add the following to your `pubspec.yaml`:
 
-This project is a starting point for a Dart
-[package](https://flutter.dev/developing-packages/),
-a library module containing code that can be shared easily across
-multiple Flutter or Dart projects.
+```
+...
+dependencies:
+  contentful_sdk: ^0.3.0
+...
+```
 
-For help getting started with Flutter, view our 
-[online documentation](https://flutter.dev/docs), which offers tutorials, 
-samples, guidance on mobile development, and a full API reference.
+## How to use
+
+> To Be Added
